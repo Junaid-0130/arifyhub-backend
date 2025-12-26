@@ -1,0 +1,11 @@
+{
+  "models": [
+    {
+      "id": "sample",
+      "name": "Test 3D Model",
+      "url": "https://modelviewer.dev/shared-assets/models/Astronaut.glb",
+      "active": true,
+      "createdAt": "2025-12-26T00:00:00Z"
+    }
+  ]
+}

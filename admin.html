@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - AR Scan App</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .controls {
+            background: #fff;
+            padding: 16px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .refresh-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+
+        .refresh-btn:hover {
+            background: #5568d3;
+        }
+
+        .refresh-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .stats {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .stat {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .stat strong {
+            color: #333;
+        }
+
+        .models-list {
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .model-item {
+            padding: 16px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .model-item:last-child {
+            border-bottom: none;
+        }
+
+        .model-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .model-id {
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            color: #333;
+            font-weight: 500;
+            margin-bottom: 4px;
+            word-break: break-all;
+        }
+
+        .model-url {
+            font-size: 12px;
+            color: #666;
+            word-break: break-all;
+            margin-bottom: 4px;
+        }
+
+        .model-status {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .status-active {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-inactive {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .toggle-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .toggle-btn.enable {
+            background: #28a745;
+            color: white;
+        }
+
+        .toggle-btn.enable:hover {
+            background: #218838;
+        }
+
+        .toggle-btn.disable {
+            background: #dc3545;
+            color: white;
+        }
+
+        .toggle-btn.disable:hover {
+            background: #c82333;
+        }
+
+        .toggle-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .error {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            color: #dc3545;
+            text-align: center;
+        }
+
+        .empty {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        @media (max-width: 768px) {
+            .model-item {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .toggle-btn {
+                width: 100%;
+            }
+
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Admin Dashboard</h1>
+            <p>Manage model access control</p>
+        </div>
+
+        <div class="controls">
+            <div class="stats">
+                <div class="stat">
+                    Total: <strong id="total-count">0</strong>
+                </div>
+                <div class="stat">
+                    Active: <strong id="active-count">0</strong>
+                </div>
+                <div class="stat">
+                    Inactive: <strong id="inactive-count">0</strong>
+                </div>
+            </div>
+            <button class="refresh-btn" id="refresh-btn" onclick="loadModels()">Refresh</button>
+        </div>
+
+        <div id="content">
+            <div class="loading">Loading models...</div>
+        </div>
+    </div>
+
+    <script>
+        // Server API base URL
+        const API_BASE_URL = window.location.origin.includes('localhost') 
+            ? 'http://localhost:3000' 
+            : window.location.origin;
+
+        // Load all models from backend
+        async function loadModels() {
+            const contentEl = document.getElementById('content');
+            const refreshBtn = document.getElementById('refresh-btn');
+            
+            refreshBtn.disabled = true;
+            contentEl.innerHTML = '<div class="loading">Loading models...</div>';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/models`);
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to load models');
+                }
+
+                displayModels(data.models || []);
+
+            } catch (error) {
+                console.error('Error loading models:', error);
+                contentEl.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            } finally {
+                refreshBtn.disabled = false;
+            }
+        }
+
+        // Display models in the list
+        function displayModels(models) {
+            const contentEl = document.getElementById('content');
+            
+            if (models.length === 0) {
+                contentEl.innerHTML = '<div class="empty">No models found</div>';
+                updateStats(0, 0, 0);
+                return;
+            }
+
+            // Update stats
+            const activeCount = models.filter(m => m.active).length;
+            const inactiveCount = models.length - activeCount;
+            updateStats(models.length, activeCount, inactiveCount);
+
+            // Create models list
+            const modelsList = document.createElement('div');
+            modelsList.className = 'models-list';
+
+            models.forEach(model => {
+                const modelItem = createModelItem(model);
+                modelsList.appendChild(modelItem);
+            });
+
+            contentEl.innerHTML = '';
+            contentEl.appendChild(modelsList);
+        }
+
+        // Create a model item element
+        function createModelItem(model) {
+            const item = document.createElement('div');
+            item.className = 'model-item';
+            item.id = `model-${model.id}`;
+
+            const info = document.createElement('div');
+            info.className = 'model-info';
+
+            const idEl = document.createElement('div');
+            idEl.className = 'model-id';
+            idEl.textContent = model.id;
+
+            const urlEl = document.createElement('div');
+            urlEl.className = 'model-url';
+            urlEl.textContent = model.modelUrl || model.url || 'N/A';
+
+            const statusEl = document.createElement('span');
+            statusEl.className = `model-status ${model.active ? 'status-active' : 'status-inactive'}`;
+            statusEl.textContent = model.active ? 'Active' : 'Inactive';
+
+            info.appendChild(idEl);
+            info.appendChild(urlEl);
+            info.appendChild(statusEl);
+
+            const toggleBtn = document.createElement('button');
+            toggleBtn.className = `toggle-btn ${model.active ? 'disable' : 'enable'}`;
+            toggleBtn.textContent = model.active ? 'Disable' : 'Enable';
+            toggleBtn.onclick = () => toggleModel(model.id, !model.active);
+
+            item.appendChild(info);
+            item.appendChild(toggleBtn);
+            
+            // =======================
+            // QR BUTTON
+            // =======================
+            const qrBtn = document.createElement('button');
+            qrBtn.textContent = 'Show QR';
+            qrBtn.style.marginLeft = '8px';
+            qrBtn.onclick = () => showQR(model.id);
+
+            item.appendChild(qrBtn);
+
+            // =======================
+            // QR CONTAINER
+            // =======================
+            const qrContainer = document.createElement('div');
+            qrContainer.id = `qr-${model.id}`;
+            qrContainer.style.marginTop = '10px';
+
+            item.appendChild(qrContainer);
+
+
+            
+
+            return item;
+        }
+
+        // Toggle model active status
+        async function toggleModel(id, newActiveStatus) {
+            const modelItem = document.getElementById(`model-${id}`);
+            if (!modelItem) return;
+
+            const toggleBtn = modelItem.querySelector('.toggle-btn');
+            const statusEl = modelItem.querySelector('.model-status');
+
+            // Disable button during update
+            toggleBtn.disabled = true;
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/model/${id}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ active: newActiveStatus })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to update model');
+                }
+
+                // Update UI
+                statusEl.textContent = newActiveStatus ? 'Active' : 'Inactive';
+                statusEl.className = `model-status ${newActiveStatus ? 'status-active' : 'status-inactive'}`;
+                toggleBtn.textContent = newActiveStatus ? 'Disable' : 'Enable';
+                toggleBtn.className = `toggle-btn ${newActiveStatus ? 'disable' : 'enable'}`;
+
+                // Update stats
+                const models = Array.from(document.querySelectorAll('.model-item')).map(item => {
+                    const status = item.querySelector('.model-status');
+                    return { active: status.classList.contains('status-active') };
+                });
+                const activeCount = models.filter(m => m.active).length;
+                const inactiveCount = models.length - activeCount;
+                updateStats(models.length, activeCount, inactiveCount);
+
+            } catch (error) {
+                console.error('Error toggling model:', error);
+                alert(`Error: ${error.message}`);
+            } finally {
+                toggleBtn.disabled = false;
+            }
+        }
+
+        // Update statistics
+        function updateStats(total, active, inactive) {
+            document.getElementById('total-count').textContent = total;
+            document.getElementById('active-count').textContent = active;
+            document.getElementById('inactive-count').textContent = inactive;
+        }
+
+        async function showQR(id) {
+        const res = await fetch(`/qr/${id}`);
+        const data = await res.json();
+
+        const container = document.getElementById(`qr-${id}`);
+        container.innerHTML = `
+            <img src="${data.qr}" style="width:200px;border:1px solid #ccc;" />
+            <div style="margin-top:6px;">
+            <a href="${data.viewerUrl}" target="_blank">
+                ${data.viewerUrl}
+            </a>
+            </div>
+        `;
+        }
+
+        // Load models when page loads
+        loadModels();
+    </script>
+</body>
+</html>
+
+

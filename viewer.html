@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>AR Viewer</title>
+    <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.3.0/model-viewer.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
+
+        body {
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        /* Full-screen model viewer */
+        model-viewer {
+            width: 100%;
+            height: 100%;
+            background: #000;
+        }
+
+        /* Loading state */
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #fff;
+            font-size: 16px;
+            text-align: center;
+            z-index: 10;
+        }
+
+        /* Full-screen access disabled message */
+        .access-disabled {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+
+        .access-disabled-content {
+            text-align: center;
+            color: #fff;
+            padding: 20px;
+        }
+
+        .access-disabled-content h1 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .access-disabled-content p {
+            font-size: 16px;
+            opacity: 0.7;
+        }
+
+        /* Error message (for other errors) */
+        .error {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #fff;
+            text-align: center;
+            padding: 20px;
+            font-size: 16px;
+            z-index: 10;
+        }
+
+        /* Hidden utility class */
+        .hidden {
+            display: none !important;
+        }
+
+        /* Mobile-first responsive */
+        @media (min-width: 768px) {
+            .access-disabled-content h1 {
+                font-size: 32px;
+            }
+
+            .access-disabled-content p {
+                font-size: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading indicator -->
+    <div class="loading" id="loading">Loading...</div>
+
+    <!-- Model viewer (hidden until model loads) -->
+    <model-viewer
+        id="model-viewer"
+        alt="3D Model"
+        ar
+        ar-modes="webxr scene-viewer quick-look"
+        camera-controls
+        auto-rotate
+        interaction-policy="allow-when-focused"
+        shadow-intensity="1"
+        environment-image="neutral"
+        exposure="1.0"
+        class="hidden">
+    </model-viewer>
+
+    <!-- Full-screen Access Disabled message -->
+    <div class="access-disabled hidden" id="access-disabled">
+        <div class="access-disabled-content">
+            <h1>Access Disabled</h1>
+            <p>This model is not available</p>
+        </div>
+    </div>
+
+    <!-- Error message (for other errors) -->
+    <div class="error hidden" id="error"></div>
+
+    <script>
+        // Get model ID from URL query parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const modelId = urlParams.get('id');
+
+        // Server API base URL
+        const API_BASE_URL = window.location.origin.includes('localhost') 
+            ? 'http://localhost:3000' 
+            : window.location.origin;
+
+        // DOM elements
+        const loadingEl = document.getElementById('loading');
+        const modelViewerEl = document.getElementById('model-viewer');
+        const accessDisabledEl = document.getElementById('access-disabled');
+        const errorEl = document.getElementById('error');
+
+        async function loadModel() {
+            // Require model ID - no direct .glb loading allowed
+            if (!modelId) {
+                loadingEl.classList.add('hidden');
+                errorEl.textContent = 'Model ID required. Use ?id=MODEL_ID';
+                errorEl.classList.remove('hidden');
+                return;
+            }
+
+            try {
+                // Call backend endpoint /model/:id
+                const response = await fetch(`${API_BASE_URL}/model/${modelId}`);
+                const data = await response.json();
+
+                // Handle "Access Disabled" response (403)
+                if (response.status === 403 && data.error === 'Access Disabled') {
+                    loadingEl.classList.add('hidden');
+                    accessDisabledEl.classList.remove('hidden');
+                    return;
+                }
+
+                // Handle other errors (404, 500, etc.)
+                if (!response.ok) {
+                    loadingEl.classList.add('hidden');
+                    errorEl.textContent = data.error || 'Failed to load model';
+                    errorEl.classList.remove('hidden');
+                    return;
+                }
+
+                // If response contains modelUrl, load it
+                if (data.modelUrl) {
+                    loadingEl.classList.add('hidden');
+                    modelViewerEl.src = data.modelUrl;
+                    modelViewerEl.classList.remove('hidden');
+                } else {
+                    throw new Error('Invalid response: modelUrl not found');
+                }
+
+            } catch (error) {
+                console.error('Error loading model:', error);
+                loadingEl.classList.add('hidden');
+                errorEl.textContent = error.message || 'Failed to load model';
+                errorEl.classList.remove('hidden');
+            }
+        }
+
+        // Load model when page loads
+        loadModel();
+    </script>
+</body>
+</html>
