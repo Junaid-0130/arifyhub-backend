@@ -342,25 +342,7 @@
             item.appendChild(info);
             item.appendChild(toggleBtn);
             
-            // =======================
-            // QR BUTTON
-            // =======================
-            const qrBtn = document.createElement('button');
-            qrBtn.textContent = 'Show QR';
-            qrBtn.style.marginLeft = '8px';
-            qrBtn.onclick = () => showQR(model.id);
-
-            item.appendChild(qrBtn);
-
-            // =======================
-            // QR CONTAINER
-            // =======================
-            const qrContainer = document.createElement('div');
-            qrContainer.id = `qr-${model.id}`;
-            qrContainer.style.marginTop = '10px';
-
-            item.appendChild(qrContainer);
-
+            
 
             
 
@@ -421,21 +403,6 @@
             document.getElementById('total-count').textContent = total;
             document.getElementById('active-count').textContent = active;
             document.getElementById('inactive-count').textContent = inactive;
-        }
-
-        async function showQR(id) {
-        const res = await fetch(`/qr/${id}`);
-        const data = await res.json();
-
-        const container = document.getElementById(`qr-${id}`);
-        container.innerHTML = `
-            <img src="${data.qr}" style="width:200px;border:1px solid #ccc;" />
-            <div style="margin-top:6px;">
-            <a href="${data.viewerUrl}" target="_blank">
-                ${data.viewerUrl}
-            </a>
-            </div>
-        `;
         }
 
         // Load models when page loads
